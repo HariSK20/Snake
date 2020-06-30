@@ -1,3 +1,8 @@
+#
+#		A SNAKE GAME
+#
+# The "settings" or the Main Variables to change how look and feel are just below the import statements
+
 import sys
 import os
 import random
@@ -8,14 +13,21 @@ except ModuleNotFoundError:
 	print("Looks like you havent downloaded PyGame in your system. May I?(y/n): ")
 	ch = input()
 	if ch == 'y' or ch =='Y':
-		s = os.system('python3 -m pip install pygame')
-		if s == 0:
-			print(" Pygame has been installed successfully!! Lets go")
-			os.system('python3 sqpong.py')
-			sys.exit()
+		try:
+			s = os.system('pip3 install pygame')
+		except:
+			try:
+				s = os.system('pip install pygame')
+			except:
+				pass
 		else:
-			print(" Sorry, we are facing trouble right now, Please try again Later")
-			sys.exit() 
+			if s == 0:
+				print(" Pygame has been installed successfully!! Lets go")
+				os.system('python3 snake.py')
+				sys.exit()
+			else:
+				print(" Sorry, we are facing trouble right now, Please try again Later")
+				sys.exit() 
 	else:
 		print(" Without it we cannot run this game, forced quit activated!")
 		sys.exit()
@@ -25,60 +37,72 @@ except Exception as e:
 	sys.exit()
 
 pygame.init()
-#pygame.mixer.init()
+#pygame.mixer.init()   #this was for sounds not yet ready
 
 # ----Global Variables----
 #-- Also your Settings panel --
-Scr_width = 1200
-Scr_height = 600
-wall_border = 20
+
+#-- The dimensions of the screen
+Scr_width = 500
+Scr_height = 500
+wall_border = 20	#---width of the wall
+	
+#----Colours and fonts
 wall_color = pygame.Color("navy")
 snake_clr = pygame.Color("green")
-bg_clr = pygame.Color("black")
+bg_clr = pygame.Color("black")			#----The Background Colour
 fruit_clr = pygame.Color("red")
-fruit_rad = 5
-snake_vel = 5
-fps = 12
+font = pygame.font.Font("freesansbold.ttf",Scr_width//60)
+
+#----radius of the fruit
+fruit_rad = 10
+
+#--- Snake initial parameters
+speed = 12		
+last_press = pygame.K_RIGHT  #--last pressed direction
 length = 5
+snake_block = 20
 max_length = length
-font = pygame.font.Font("freesansbold.ttf",20)
-fontx = Scr_width//3
-fonty = 3
-last_press = pygame.K_RIGHT
+speed_inc = 2		#----Increments to the speed after eating fruit
+
 #levels = [10, 20, 27, 33, 38]
 #level = 0
-sw, sh = (Scr_width-2*wall_border), (Scr_height - 5*wall_border)
+
+#---playable region dimension---- not to be changed!!!
+sw = (Scr_width-2*wall_border)  
+sh = (Scr_height - 5*wall_border)
 
 
 #----- classes -----
 
 
 class food:
-	radius = 7
 	global screen, fruit_clr
-	def __init__(self, pos):
+	def __init__(self, pos, rad):
 		self.x = pos[0]
 		self.y = pos[1]
+		self.fruit_rad = rad
 
 	def show(self, pnt = [0,0]):
 		global bg_clr
 		if pnt != [0,0]:
-			pygame.draw.circle(screen, bg_clr, (self.x, self.y), self.radius)
+			pygame.draw.circle(screen, bg_clr, (self.x, self.y), self.fruit_rad)
 			self.x, self.y = pnt[0], pnt[1]
-		pygame.draw.circle(screen, fruit_clr, (self.x, self.y), self.radius)
+		pygame.draw.circle(screen, fruit_clr, (self.x, self.y), self.fruit_rad)
 
 	def update(self, snake, blk):
-		global Scr_height, Scr_width, wall_border, length, fps, max_length
+		global Scr_height, Scr_width, wall_border, length, speed, max_length, speed_inc
 		fd = [self.x, self.y]
 #		print("x: food = {}, snake = {}".format(self.x, snake[0]))
 #		print("y: food = {}, snake = {}".format(self.y, snake[1]))
-		temp = range(0,blk)
+		temp = range(0,blk+ self.fruit_rad//2)
 		if ((fd[0] - snake[0]) in temp) and ((fd[1] - snake[1]) in temp) : 
 #			print("True")
 			length +=1
 			if length>max_length:
 				max_length = length
-			fps += 1
+			speed += speed_inc
+#			print(speed)
 			fd = None
 			while fd is None:
 				nf = list(find_pos())
@@ -95,10 +119,10 @@ class food:
 class Snake:
 	global length
 	body=[]
-	body_blk = 20
-	def __init__(self, x, y):
+	def __init__(self, x, y, blk):
 		self.x = x
 		self.y = y
+		self.body_blk = blk
 		self.body = [[x,y], [x-self.body_blk, y], [x-2*self.body_blk,y]]
 		if length > len(self.body):
 			for i in range(3,length+1):
@@ -135,6 +159,7 @@ class Snake:
 		global sh, sw, bg_clr, screen, last_press, wall_border
 		head = [self.body[0][0], self.body[0][1]]
 		event = pygame.event.poll()
+		flg = 1
 		if head[0] < 2*wall_border or head[0] > (sw - self.body_blk + 5):
 #			print("Horizontal limit exceeded\n")
 			The_end(1)
@@ -145,21 +170,24 @@ class Snake:
 			key = event.key
 #			print(str( head in self.body[1:]))
 			if key == pygame.K_DOWN and last_press == pygame.K_UP:
-				pass
+				flg = 1
 			elif key == pygame.K_UP and last_press == pygame.K_DOWN:
-				pass
+				flg = 1
 			elif key == pygame.K_RIGHT and last_press == pygame.K_LEFT:
-				pass
+				flg = 1
 			elif key == pygame.K_LEFT and last_press == pygame.K_RIGHT:
-				pass
+				flg = 1
 			else:
-				head = self.check_press(key, head)
+				flg = 2
+#				head = self.check_press(key, head)
 		elif head in self.body[1:]:
 			The_end(1)
 		elif event.type == pygame.QUIT:
 			The_end()
-		else:
+		if flg==1:
 			head = self.check_press(last_press, head)
+		else:
+			head = self.check_press(key, head)
 		self.body.insert(0, head)
 		if fruit_1.update(self.body[0], self.body_blk) == 1:
 			self.show(1)
@@ -185,13 +213,19 @@ def The_end(flg = 0):
 
 #Prints the Score and max Score to the screen
 def show_score(x,y):
-	global length, screen, bg_clr, max_length
+	global length, screen, bg_clr, max_length, wall_border
 	pygame.draw.rect(screen, bg_clr, pygame.Rect(0, 0, Scr_width, 3*wall_border))
 #	screen.blit(scr, (x, y))
+	s = " SNAKE "
+	n = random.randint(1,100000)
+	if n == 12398:
+		s = " SNAEK "
 	scr = font.render(" Length: " + str(length) , True, (255,255,255))
-	screen.blit(scr, (x,y))
-	scr2 = font.render(" Highest Length: " + str(max_length), True, (255,255,255))
-	screen.blit(scr2 ,(2*x,y))
+	screen.blit(scr, (x - wall_border,y))
+	scr2 = font.render(s , True, (255,255,255))
+	screen.blit(scr2, ((3*x)//2 - wall_border,y))
+	scr3 = font.render(" Highest Length: " + str(max_length), True, (255,255,255))
+	screen.blit(scr3 ,(2*x,y))
 
 
 # Creating the Screen object
@@ -199,21 +233,20 @@ if Scr_height <= 300 or Scr_width <= 400:
 	print("\n The User Set Dimensions are not playable!!\n Reverting to default\n")
 	Scr_width = 1250
 	Scr_height = 600
+	sw, sh = (Scr_width-2*wall_border), (Scr_height - 5*wall_border)
 
 screen = pygame.display.set_mode((Scr_width, Scr_height))
 
 
 def main():
-	global score, wall_border, Scr_width, Scr_height, sh, sw, wall_color, bg_clr, last_press, length
+	global wall_border, Scr_width, Scr_height, sh, sw, wall_color, bg_clr, last_press, length, snake_block, fruit_rad, speed
 	last_press = pygame.K_RIGHT
 #	ball_1.reset(random.randrange(2*wall_border,Scr_width - 100), random.randrange(2*wall_border,Scr_height - 100), ball_vel[0], ball_vel[1])
 	length = 5
-	fps = 12
+	speed = 12
 	show_score(Scr_width//3, wall_border)
-	fruit_1 = food(find_pos())
-	snake = Snake((sw//40)*10, (sh//20)*10)
-	level = 0
-	score = 0
+	fruit_1 = food(find_pos(), fruit_rad)
+	snake = Snake((sw//40)*10, (sh//20)*10, snake_block)
 	# The walls
 	pygame.draw.rect(screen, wall_color, pygame.Rect(0, 3*wall_border, Scr_width, Scr_height))
 	pygame.draw.rect(screen, bg_clr, pygame.Rect(wall_border, 4*wall_border, (Scr_width-2*wall_border), (Scr_height - 5*wall_border)))
@@ -223,7 +256,7 @@ def main():
 		if e.type == pygame.QUIT:
 			break
 		fruit_1.show()
-		clk.tick(fps)
+		clk.tick(speed)
 		snake.update(fruit_1)
 		pygame.display.flip()
 	print("\n Thank You!! :-)\n")
@@ -232,6 +265,6 @@ def main():
 if __name__=='__main__':
 	main()
 '''
-Snaek Game
+Snaek Game1.1
 Made By HariSK20
 '''
