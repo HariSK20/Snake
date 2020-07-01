@@ -36,15 +36,17 @@ except Exception as e:
 	print("An error occured, Sorry")
 	sys.exit()
 
-pygame.init()
+pygame.init()	
 #pygame.mixer.init()   #this was for sounds not yet ready
 
 # ----Global Variables----
 #-- Also your Settings panel --
 
 #-- The dimensions of the screen
-Scr_width = 500
-Scr_height = 500
+Scr_width = 1200
+Scr_height = 700
+#---- The object sizes changes automatically with respect to the above two,
+#---- To disable that comment off the autoset() call
 wall_border = 20	#---width of the wall
 	
 #----Colours and fonts
@@ -63,15 +65,25 @@ last_press = pygame.K_RIGHT  #--last pressed direction
 length = 5
 snake_block = 20
 max_length = length
-speed_inc = 2		#----Increments to the speed after eating fruit
+speed_inc = 1		#----Increments to the speed after eating fruit
 
-#levels = [10, 20, 27, 33, 38]
-#level = 0
+# ------ Auto Adjust the Sizes of objects according to Scr_width and Scr_height
+def autoset():
+	global Scr_height, Scr_width, wall_border, fruit_rad, snake_block
+	x = Scr_height//60
+	Scr_width = (40*Scr_height)//30
+	wall_border = x+2
+	snake_block = wall_border
+	fruit_rad = snake_block//2
+
+#----The autoset() call 
+autoset()  #----Line to be commented off
+
+#---- Comment off the above line to set your own sizes
 
 #---playable region dimension---- not to be changed!!!
 sw = (Scr_width-2*wall_border)  
 sh = (Scr_height - 5*wall_border)
-
 
 #----- classes -----
 
@@ -160,10 +172,10 @@ class Snake:
 		head = [self.body[0][0], self.body[0][1]]
 		event = pygame.event.poll()
 		flg = 1
-		if head[0] < 2*wall_border or head[0] > (sw - self.body_blk + 5):
+		if head[0] < 2*wall_border - 5 or head[0] > (sw - self.body_blk + 5):
 #			print("Horizontal limit exceeded\n")
 			The_end(1)
-		elif (head[1] < (5*wall_border - 10)) or (head[1] > (sh + 3*wall_border - self.body_blk)):
+		elif (head[1] < (5*wall_border - 5)) or (head[1] > (sh + 3*wall_border - self.body_blk+10)):
 #			print("Vertical limit exceeded\n")
 			The_end(1)
 		elif event.type == pygame.KEYDOWN:
@@ -177,6 +189,10 @@ class Snake:
 				flg = 1
 			elif key == pygame.K_LEFT and last_press == pygame.K_RIGHT:
 				flg = 1
+			elif key == pygame.K_q:
+				The_end()
+			elif key == pygame.K_e:
+				time.sleep(2)
 			else:
 				flg = 2
 #				head = self.check_press(key, head)
@@ -224,7 +240,7 @@ def show_score(x,y):
 	screen.blit(scr, (x - wall_border,y))
 	scr2 = font.render(s , True, (255,255,255))
 	screen.blit(scr2, ((3*x)//2 - wall_border,y))
-	scr3 = font.render(" Highest Length: " + str(max_length), True, (255,255,255))
+	scr3 = font.render(" Highest Score: " + str(max_length), True, (255,255,255))
 	screen.blit(scr3 ,(2*x,y))
 
 
@@ -246,12 +262,17 @@ def main():
 	speed = 12
 	show_score(Scr_width//3, wall_border)
 	fruit_1 = food(find_pos(), fruit_rad)
-	snake = Snake((sw//40)*10, (sh//20)*10, snake_block)
+	snake = Snake((sw//40)*10+5, (sh//20)*10+5, snake_block)
 	# The walls
 	pygame.draw.rect(screen, wall_color, pygame.Rect(0, 3*wall_border, Scr_width, Scr_height))
 	pygame.draw.rect(screen, bg_clr, pygame.Rect(wall_border, 4*wall_border, (Scr_width-2*wall_border), (Scr_height - 5*wall_border)))
 	clk = pygame.time.Clock()
+	count = 0
 	while True:
+		if count < 5:
+			pygame.draw.rect(screen, wall_color, pygame.Rect(0, 3*wall_border, Scr_width, Scr_height))
+			pygame.draw.rect(screen, bg_clr, pygame.Rect(wall_border, 4*wall_border, (Scr_width-2*wall_border), (Scr_height - 5*wall_border)))
+			count += 1
 		e = pygame.event.poll()
 		if e.type == pygame.QUIT:
 			break
